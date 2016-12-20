@@ -1,16 +1,30 @@
 #ifndef __ARCH_ARM_NUMA_H
 #define __ARCH_ARM_NUMA_H
 
+#include <xen/errno.h>
+
 typedef u8 nodeid_t;
 
 #define NODES_SHIFT 2
 
 #ifdef CONFIG_NUMA
 int arch_numa_setup(char *opt);
+int __init numa_init(void);
+int __init dt_numa_init(void);
 #else
 static inline int arch_numa_setup(char *opt)
 {
     return 1;
+}
+
+static inline int __init numa_init(void)
+{
+    return 0;
+}
+
+static inline int __init dt_numa_init(void)
+{
+    return -EINVAL;
 }
 
 /* Fake one node for now. See also node_online_map. */

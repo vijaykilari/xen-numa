@@ -188,6 +188,10 @@ int device_tree_for_each_node(const void *fdt,
                                      device_tree_node_func func,
                                      void *data);
 
+bool_t device_tree_node_matches(const void *fdt, int node,
+                                const char *match);
+u32 device_tree_get_u32(const void *fdt, int node,
+                        const char *prop_name, u32 dflt);
 /**
  * dt_unflatten_host_device_tree - Unflatten the host device tree
  *

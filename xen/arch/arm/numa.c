@@ -21,6 +21,20 @@
 #include <xen/nodemask.h>
 #include <asm/mm.h>
 #include <xen/numa.h>
+#include <asm/acpi.h>
+
+int __init numa_init(void)
+{
+    int ret = 0;
+
+    if ( numa_off )
+        goto no_numa;
+
+    ret = dt_numa_init();
+
+no_numa:
+    return ret;
+}
 
 int __init arch_numa_setup(char *opt)
 {

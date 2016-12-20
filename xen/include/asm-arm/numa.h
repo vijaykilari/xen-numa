@@ -3,6 +3,8 @@
 
 typedef uint8_t nodeid_t;
 
+void dt_numa_process_memory_node(uint32_t nid, paddr_t start, paddr_t size);
+
 #ifdef CONFIG_NUMA
 void numa_init(void);
 int dt_numa_init(void);

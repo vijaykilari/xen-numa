@@ -19,6 +19,11 @@
 #include <xen/nodemask.h>
 #include <xen/numa.h>
 
+void numa_failed(void)
+{
+    numa_off = true;
+}
+
 void __init numa_init(void)
 {
     int ret = 0;

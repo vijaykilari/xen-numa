@@ -285,8 +285,13 @@ static int __init early_scan_node(const void *fdt,
                                   u32 address_cells, u32 size_cells,
                                   void *data)
 {
-    if ( device_tree_node_matches(fdt, node, "memory") )
-        process_memory_node(fdt, node, name, address_cells, size_cells);
+    /*
+     * Parse memory node only if bootinfo.mem is empty.
+     */
+    if ( bootinfo.mem.nr_banks == 0 ) {
+        if ( device_tree_node_matches(fdt, node, "memory") )
+            process_memory_node(fdt, node, name, address_cells, size_cells);
+    }
     else if ( device_tree_node_compatible(fdt, node, "xen,multiboot-module" ) ||
               device_tree_node_compatible(fdt, node, "multiboot,module" ))
         process_multiboot_node(fdt, node, name, address_cells, size_cells);

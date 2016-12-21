@@ -56,8 +56,8 @@ static bool_t __init device_tree_node_compatible(const void *fdt, int node,
     return 0;
 }
 
-static void __init device_tree_get_reg(const __be32 **cell, u32 address_cells,
-                                       u32 size_cells, u64 *start, u64 *size)
+void __init device_tree_get_reg(const __be32 **cell, u32 address_cells,
+                                u32 size_cells, u64 *start, u64 *size)
 {
     *start = dt_next_cell(address_cells, cell);
     *size = dt_next_cell(size_cells, cell);

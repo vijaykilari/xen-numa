@@ -55,6 +55,14 @@ struct node node_memblk_range[NR_NODE_MEMBLKS];
 nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
 struct node nodes[MAX_NUMNODES] __initdata;
 
+void __init numa_add_memblk(nodeid_t nodeid, u64 start, u64 size)
+{
+    node_memblk_range[num_node_memblks].start = start;
+    node_memblk_range[num_node_memblks].end = start + size;
+    memblk_nodeid[num_node_memblks] = nodeid;
+    num_node_memblks++;
+}
+
 int valid_numa_range(u64 start, u64 end, nodeid_t node)
 {
 #ifdef CONFIG_NUMA

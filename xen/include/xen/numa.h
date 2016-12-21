@@ -67,6 +67,7 @@ static inline __attribute__((pure)) nodeid_t phys_to_nid(paddr_t addr)
 #define clear_node_cpumask(cpu) do {} while (0)
 #endif /* CONFIG_NUMA */
 
+extern void numa_add_memblk(nodeid_t nodeid, u64 start, u64 size);
 extern int valid_numa_range(u64 start, u64 end, nodeid_t node);
 extern int conflicting_memblks(u64 start, u64 end);
 extern void cutoff_node(int i, u64 start, u64 end);

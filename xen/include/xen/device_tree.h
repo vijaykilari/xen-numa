@@ -192,6 +192,9 @@ bool_t device_tree_node_matches(const void *fdt, int node,
                                 const char *match);
 u32 device_tree_get_u32(const void *fdt, int node,
                         const char *prop_name, u32 dflt);
+void device_tree_get_reg(const __be32 **cell, u32 address_cells,
+                         u32 size_cells, u64 *start, u64 *size);
+
 /**
  * dt_unflatten_host_device_tree - Unflatten the host device tree
  *

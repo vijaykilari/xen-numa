@@ -22,7 +22,6 @@ extern nodeid_t pxm_to_node(unsigned int pxm);
 #define ZONE_ALIGN (1UL << (MAX_ORDER+PAGE_SHIFT))
 
 extern void numa_init_array(void);
-extern bool_t numa_off;
 
 extern int srat_disabled(void);
 extern void srat_detect_node(int cpu);
@@ -32,5 +31,6 @@ extern nodeid_t apicid_to_node[];
 void srat_parse_regions(u64 addr);
 extern u8 __node_distance(nodeid_t a, nodeid_t b);
 unsigned int arch_get_dma_bitsize(void);
+int arch_numa_setup(char *opt);
 
 #endif

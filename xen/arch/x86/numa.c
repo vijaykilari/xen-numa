@@ -18,9 +18,6 @@
 #include <xen/sched.h>
 #include <xen/softirq.h>
 
-static int numa_setup(char *s);
-custom_param("numa", numa_setup);
-
 #ifndef Dprintk
 #define Dprintk(x...)
 #endif
@@ -34,7 +31,6 @@ nodeid_t apicid_to_node[MAX_LOCAL_APIC] = {
 
 nodemask_t __read_mostly node_online_map = { { [0] = 1UL } };
 
-bool_t numa_off = 0;
 s8 acpi_numa = 0;
 
 int srat_disabled(void)
@@ -145,13 +141,8 @@ void __init numa_initmem_init(unsigned long start_pfn, unsigned long end_pfn)
                     (u64)end_pfn << PAGE_SHIFT);
 }
 
-/* [numa=off] */
-static __init int numa_setup(char *opt) 
+int __init arch_numa_setup(char *opt)
 { 
-    if ( !strncmp(opt,"off",3) )
-        numa_off = 1;
-    if ( !strncmp(opt,"on",2) )
-        numa_off = 0;
 #ifdef CONFIG_NUMA_EMU
     if ( !strncmp(opt, "fake=", 5) )
     {

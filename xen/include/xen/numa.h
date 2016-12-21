@@ -18,6 +18,7 @@
   (((d)->vcpu != NULL && (d)->vcpu[0] != NULL) \
    ? vcpu_to_node((d)->vcpu[0]) : NUMA_NO_NODE)
 
+extern bool_t numa_off;
 struct node {
 	u64 start,end;
 };

@@ -32,6 +32,10 @@
 #include <xen/softirq.h>
 #include <asm/setup.h>
 
+static int numa_setup(char *s);
+custom_param("numa", numa_setup);
+
+bool_t numa_off = 0;
 struct node_data node_data[MAX_NUMNODES];
 
 /* Mapping from pdx to node id */
@@ -249,6 +253,16 @@ EXPORT_SYMBOL(node_to_cpumask);
 EXPORT_SYMBOL(memnode_shift);
 EXPORT_SYMBOL(memnodemap);
 EXPORT_SYMBOL(node_data);
+
+static __init int numa_setup(char *opt)
+{
+    if ( !strncmp(opt,"off",3) )
+        numa_off = 1;
+    if ( !strncmp(opt,"on",2) )
+        numa_off = 0;
+
+    return arch_numa_setup(opt);
+}
 
 static void dump_numa(unsigned char key)
 {

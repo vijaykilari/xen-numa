@@ -5,7 +5,14 @@ typedef u8 nodeid_t;
 
 #define NODES_SHIFT 2
 
-#ifndef CONFIG_NUMA
+#ifdef CONFIG_NUMA
+int arch_numa_setup(char *opt);
+#else
+static inline int arch_numa_setup(char *opt)
+{
+    return 1;
+}
+
 /* Fake one node for now. See also node_online_map. */
 #define cpu_to_node(cpu) 0
 #define node_to_cpumask(node)   (cpu_online_map)

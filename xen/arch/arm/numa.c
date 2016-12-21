@@ -22,13 +22,30 @@
 #include <asm/mm.h>
 #include <xen/numa.h>
 #include <asm/acpi.h>
+#include <xen/errno.h>
+
+int _node_distance[MAX_NUMNODES * 2];
+int *node_distance;
+
+u8 __node_distance(nodeid_t a, nodeid_t b)
+{
+    if ( !node_distance )
+        return a == b ? 10 : 20;
+
+    return _node_distance[a * MAX_NUMNODES + b];
+}
+
+EXPORT_SYMBOL(__node_distance);
 
 int __init numa_init(void)
 {
-    int ret = 0;
+    int i, ret = 0;
 
     if ( numa_off )
         goto no_numa;
+
+    for ( i = 0; i < MAX_NUMNODES * 2; i++ )
+        _node_distance[i] = 0;
 
     ret = dt_numa_init();
 

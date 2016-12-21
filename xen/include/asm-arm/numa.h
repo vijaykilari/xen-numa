@@ -11,6 +11,7 @@ typedef u8 nodeid_t;
 int arch_numa_setup(char *opt);
 int __init numa_init(void);
 int __init dt_numa_init(void);
+u8 __node_distance(nodeid_t a, nodeid_t b);
 #else
 static inline int arch_numa_setup(char *opt)
 {

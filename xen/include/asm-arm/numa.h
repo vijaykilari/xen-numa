@@ -2,16 +2,26 @@
 #define __ARCH_ARM_NUMA_H
 
 #include <xen/errno.h>
+#include <xen/cpumask.h>
 
 typedef u8 nodeid_t;
 
 #define NODES_SHIFT 2
 
 #ifdef CONFIG_NUMA
+
+extern cpumask_t     node_to_cpumask[];
+extern nodeid_t      cpu_to_node[NR_CPUS];
+#define cpu_to_node(cpu)         (cpu_to_node[cpu])
+#define parent_node(node)        (node)
+#define node_to_first_cpu(node)  (__ffs(node_to_cpumask[node]))
+#define node_to_cpumask(node)    (node_to_cpumask[node])
+
 int arch_numa_setup(char *opt);
 int __init numa_init(void);
 int __init dt_numa_init(void);
 u8 __node_distance(nodeid_t a, nodeid_t b);
+void __init numa_set_cpu_node(int cpu, unsigned long hwid);
 #else
 static inline int arch_numa_setup(char *opt)
 {
@@ -26,6 +36,11 @@ static inline int __init numa_init(void)
 static inline int __init dt_numa_init(void)
 {
     return -EINVAL;
+}
+
+static inline void __init numa_set_cpu_node(int cpu, unsigned long hwid)
+{
+    return;
 }
 
 /* Fake one node for now. See also node_online_map. */

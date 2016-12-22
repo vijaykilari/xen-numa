@@ -23,9 +23,23 @@
 #include <xen/numa.h>
 #include <asm/acpi.h>
 #include <xen/errno.h>
+#include <xen/cpumask.h>
 
 int _node_distance[MAX_NUMNODES * 2];
 int *node_distance;
+extern nodemask_t numa_nodes_parsed;
+
+void __init numa_set_cpu_node(int cpu, unsigned long hwid)
+{
+    unsigned node;
+
+    node = hwid >> 16 & 0xf;
+    if ( !node_isset(node, numa_nodes_parsed) || node == MAX_NUMNODES )
+        node = 0;
+
+    numa_set_node(cpu, node);
+    numa_add_cpu(cpu);
+}
 
 u8 __node_distance(nodeid_t a, nodeid_t b)
 {
@@ -36,6 +50,17 @@ u8 __node_distance(nodeid_t a, nodeid_t b)
 }
 
 EXPORT_SYMBOL(__node_distance);
+
+/*
+ * Setup early cpu_to_node.
+ */
+void __init init_cpu_to_node(void)
+{
+    int i;
+
+    for ( i = 0; i < nr_cpu_ids; i++ )
+        numa_set_node(i, 0);
+}
 
 int __init numa_init(void)
 {

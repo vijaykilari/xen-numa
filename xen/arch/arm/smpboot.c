@@ -30,6 +30,7 @@
 #include <xen/irq.h>
 #include <xen/console.h>
 #include <asm/cpuerrata.h>
+#include <xen/numa.h>
 #include <asm/gic.h>
 #include <asm/psci.h>
 #include <asm/acpi.h>
@@ -312,6 +313,8 @@ void start_secondary(unsigned long boot_phys_offset,
      * online.
      */
     smp_wmb();
+
+    numa_set_cpu_node(cpuid, hwid);
 
     /* Now report this CPU is up */
     cpumask_set_cpu(cpuid, &cpu_online_map);

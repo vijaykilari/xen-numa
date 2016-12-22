@@ -24,10 +24,15 @@
 #include <asm/acpi.h>
 #include <xen/errno.h>
 #include <xen/cpumask.h>
+#include <asm/setup.h>
 
 int _node_distance[MAX_NUMNODES * 2];
 int *node_distance;
 extern nodemask_t numa_nodes_parsed;
+extern struct node nodes[MAX_NUMNODES] __initdata;
+extern int num_node_memblks;
+extern struct node node_memblk_range[NR_NODE_MEMBLKS];
+extern nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
 
 void __init numa_set_cpu_node(int cpu, unsigned long hwid)
 {
@@ -51,6 +56,88 @@ u8 __node_distance(nodeid_t a, nodeid_t b)
 
 EXPORT_SYMBOL(__node_distance);
 
+static int __init numa_mem_init(void)
+{
+    nodemask_t memory_nodes_parsed;
+    int bank, nodeid;
+    struct node *nd;
+    paddr_t start, size, end;
+
+    nodes_clear(memory_nodes_parsed);
+    for ( bank = 0 ; bank < bootinfo.mem.nr_banks; bank++ )
+    {
+        start = bootinfo.mem.bank[bank].start;
+        size = bootinfo.mem.bank[bank].size;
+        end = start + size;
+
+        nodeid = get_numa_node(start, end);
+        if ( nodeid == -EINVAL || nodeid > MAX_NUMNODES )
+        {
+            printk(XENLOG_WARNING
+                   "NUMA: node for mem bank start 0x%lx - 0x%lx not found\n",
+                   start, end);
+
+            return -EINVAL;
+        }
+
+        nd = &nodes[nodeid];
+        if ( !node_test_and_set(nodeid, memory_nodes_parsed) )
+        {
+            nd->start = start;
+            nd->end = end;
+        }
+        else
+        {
+            if ( start < nd->start )
+                nd->start = start;
+            if ( nd->end < end )
+                nd->end = end;
+        }
+    }
+
+    return 0;
+}
+
+/* Use the information discovered above to actually set up the nodes. */
+static int __init numa_scan_mem_nodes(void)
+{
+    int i;
+
+    memnode_shift = compute_hash_shift(node_memblk_range, num_node_memblks,
+                                       memblk_nodeid);
+    if ( memnode_shift < 0 )
+    {
+        printk(XENLOG_WARNING "No NUMA hash found.\n");
+        memnode_shift = 0;
+    }
+
+    for_each_node_mask(i, numa_nodes_parsed)
+    {
+        u64 size = node_memblk_range[i].end - node_memblk_range[i].start;
+
+        if ( size == 0 )
+            printk(XENLOG_WARNING "NUMA: Node %u has no memory. \n", i);
+
+        printk(XENLOG_INFO
+               "NUMA: NODE[%d]: Start 0x%lx End 0x%lx\n",
+               i, nodes[i].start, nodes[i].end);
+        setup_node_bootmem(i, nodes[i].start, nodes[i].end);
+    }
+
+    return 0;
+}
+
+static int __init numa_initmem_init(void)
+{
+    if ( !numa_mem_init() )
+    {
+        if ( !numa_scan_mem_nodes() )
+            return 0;
+    }
+
+    return -EINVAL;
+}
+
 /*
  * Setup early cpu_to_node.
  */
@@ -73,6 +160,9 @@ int __init numa_init(void)
         _node_distance[i] = 0;
 
     ret = dt_numa_init();
+
+    if ( !ret )
+        ret = numa_initmem_init();
 
 no_numa:
     return ret;

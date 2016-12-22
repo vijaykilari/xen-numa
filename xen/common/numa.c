@@ -63,6 +63,20 @@ void __init numa_add_memblk(nodeid_t nodeid, u64 start, u64 size)
     num_node_memblks++;
 }
 
+int __init get_numa_node(u64 start, u64 end)
+{
+    int i;
+
+    for ( i = 0; i < num_node_memblks; i++ )
+    {
+        if ( start >= node_memblk_range[i].start &&
+             end <= node_memblk_range[i].end )
+            return memblk_nodeid[i];
+    }
+
+    return -EINVAL;
+}
+
 int valid_numa_range(u64 start, u64 end, nodeid_t node)
 {
 #ifdef CONFIG_NUMA

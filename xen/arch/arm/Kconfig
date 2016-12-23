@@ -23,6 +23,7 @@ config ARM
 	select HAS_PASSTHROUGH
 	select HAS_PDX
 	select VIDEO
+	select NUMA
 
 config ARCH_DEFCONFIG
 	string

@@ -19,6 +19,7 @@
 #include <xen/ctype.h>
 #include <xen/mm.h>
 #include <xen/nodemask.h>
+#include <xen/pfn.h>
 #include <asm/mm.h>
 #include <xen/numa.h>
 #include <asm/acpi.h>
@@ -127,6 +128,29 @@ static int __init numa_scan_mem_nodes(void)
     return 0;
 }
 
+static void __init numa_dummy_init(unsigned long start_pfn,
+                                   unsigned long end_pfn)
+{
+    int i;
+
+    nodes_clear(numa_nodes_parsed);
+    memnode_shift = BITS_PER_LONG - 1;
+    memnodemap = _memnodemap;
+    nodes_clear(node_online_map);
+    node_set_online(0);
+
+    for ( i = 0; i < NR_CPUS; i++ )
+        numa_set_node(i, 0);
+
+    node_distance = NULL;
+    for ( i = 0; i < MAX_NUMNODES * 2; i++ )
+        _node_distance[i] = 0;
+
+    cpumask_copy(&node_to_cpumask[0], cpumask_of(0));
+    setup_node_bootmem(0, (u64)start_pfn << PAGE_SHIFT,
+                       (u64)end_pfn << PAGE_SHIFT);
+}
+
 static int __init numa_initmem_init(void)
 {
     if ( !numa_mem_init() )
@@ -151,7 +175,9 @@ void __init init_cpu_to_node(void)
 
 int __init numa_init(void)
 {
-    int i, ret = 0;
+    int i, bank, ret = 0;
+    paddr_t ram_start = ~0;
+    paddr_t ram_end = 0;
 
     if ( numa_off )
         goto no_numa;
@@ -164,8 +190,28 @@ int __init numa_init(void)
     if ( !ret )
         ret = numa_initmem_init();
 
+    if ( !ret )
+        return 0;
+
 no_numa:
-    return ret;
+    for ( bank = 0 ; bank < bootinfo.mem.nr_banks; bank++ )
+    {
+        paddr_t bank_start = bootinfo.mem.bank[bank].start;
+        paddr_t bank_end = bank_start + bootinfo.mem.bank[bank].size;
+
+        ram_start = min(ram_start, bank_start);
+        ram_end = max(ram_end, bank_end);
+    }
+
+    printk(XENLOG_INFO "%s\n",
+           numa_off ? "NUMA turned off" : "No NUMA configuration found");
+
+    printk(XENLOG_INFO "Faking a node at %016"PRIx64"-%016"PRIx64"\n",
+           (u64)ram_start, (u64)ram_end);
+
+    numa_dummy_init(PFN_UP(ram_start),PFN_DOWN(ram_end));
+
+    return 0;
 }
 
 int __init arch_numa_setup(char *opt)

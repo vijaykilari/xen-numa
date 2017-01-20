@@ -14,6 +14,7 @@
 #include <xen/time.h>
 #include <xen/smp.h>
 #include <xen/pfn.h>
+#include <xen/srat.h>
 #include <asm/acpi.h>
 #include <xen/sched.h>
 #include <xen/softirq.h>

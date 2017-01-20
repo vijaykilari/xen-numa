@@ -73,7 +73,6 @@ extern int valid_numa_range(u64 start, u64 end, nodeid_t node);
 extern int conflicting_memblks(u64 start, u64 end);
 extern void cutoff_node(int i, u64 start, u64 end);
 extern void numa_add_cpu(int cpu);
-extern nodeid_t setup_node(unsigned int pxm);
 extern void numa_set_node(int cpu, nodeid_t node);
 extern void setup_node_bootmem(nodeid_t nodeid, u64 start, u64 end);
 extern int compute_hash_shift(struct node *nodes, int numnodes,

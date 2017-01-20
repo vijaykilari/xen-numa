@@ -22,6 +22,7 @@
 #include <xen/compat.h>
 #include <xen/libelf.h>
 #include <xen/pfn.h>
+#include <xen/srat.h>
 #include <asm/regs.h>
 #include <asm/system.h>
 #include <asm/io.h>

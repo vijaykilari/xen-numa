@@ -17,8 +17,6 @@ extern cpumask_t     node_to_cpumask[];
 #define node_to_first_cpu(node)  (__ffs(node_to_cpumask[node]))
 #define node_to_cpumask(node)    (node_to_cpumask[node])
 
-extern nodeid_t pxm_to_node(unsigned int pxm);
-
 #define ZONE_ALIGN (1UL << (MAX_ORDER+PAGE_SHIFT))
 
 extern void numa_init_array(void);

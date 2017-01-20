@@ -18,90 +18,19 @@
 #include <xen/acpi.h>
 #include <xen/numa.h>
 #include <xen/pfn.h>
+#include <xen/srat.h>
 #include <asm/e820.h>
 #include <asm/page.h>
 
-static struct acpi_table_slit *__read_mostly acpi_slit;
+extern struct acpi_table_slit *__read_mostly acpi_slit;
 
 static nodemask_t memory_nodes_parsed __initdata;
 static nodemask_t processor_nodes_parsed __initdata;
 extern struct node nodes[MAX_NUMNODES] __initdata;
-
-struct pxm2node {
-	unsigned pxm;
-	nodeid_t node;
-};
-static struct pxm2node __read_mostly pxm2node[MAX_NUMNODES] =
-	{ [0 ... MAX_NUMNODES - 1] = {.node = NUMA_NO_NODE} };
-
-static unsigned node_to_pxm(nodeid_t n);
-
 extern int num_node_memblks;
 extern struct node node_memblk_range[NR_NODE_MEMBLKS];
 extern nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
 static __initdata DECLARE_BITMAP(memblk_hotplug, NR_NODE_MEMBLKS);
-
-static inline bool_t node_found(unsigned idx, unsigned pxm)
-{
-	return ((pxm2node[idx].pxm == pxm) &&
-		(pxm2node[idx].node != NUMA_NO_NODE));
-}
-
-nodeid_t pxm_to_node(unsigned pxm)
-{
-	unsigned i;
-
-	if ((pxm < ARRAY_SIZE(pxm2node)) && node_found(pxm, pxm))
-		return pxm2node[pxm].node;
-
-	for (i = 0; i < ARRAY_SIZE(pxm2node); i++)
-		if (node_found(i, pxm))
-			return pxm2node[i].node;
-
-	return NUMA_NO_NODE;
-}
-
-nodeid_t setup_node(unsigned pxm)
-{
-	nodeid_t node;
-	unsigned idx;
-	static bool_t warned;
-	static unsigned nodes_found;
-
-	BUILD_BUG_ON(MAX_NUMNODES >= NUMA_NO_NODE);
-
-	if (pxm < ARRAY_SIZE(pxm2node)) {
-		if (node_found(pxm, pxm))
-			return pxm2node[pxm].node;
-
-		/* Try to maintain indexing of pxm2node by pxm */
-		if (pxm2node[pxm].node == NUMA_NO_NODE) {
-			idx = pxm;
-			goto finish;
-		}
-	}
-
-	for (idx = 0; idx < ARRAY_SIZE(pxm2node); idx++)
-		if (pxm2node[idx].node == NUMA_NO_NODE)
-			goto finish;
-
-	if (!warned) {
-		printk(KERN_WARNING "SRAT: Too many proximity domains (%#x)\n",
-		       pxm);
-		warned = 1;
-	}
-
-	return NUMA_NO_NODE;
-
- finish:
-	node = nodes_found++;
-	if (node >= MAX_NUMNODES)
-		return NUMA_NO_NODE;
-	pxm2node[idx].pxm = pxm;
-	pxm2node[idx].node = node;
-
-	return node;
-}
 
 static __init void bad_srat(void)
 {
@@ -113,48 +42,6 @@ static __init void bad_srat(void)
 	for (i = 0; i < ARRAY_SIZE(pxm2node); i++)
 		pxm2node[i].node = NUMA_NO_NODE;
 	mem_hotplug = 0;
-}
-
-/*
- * A lot of BIOS fill in 10 (= no distance) everywhere. This messes
- * up the NUMA heuristics which wants the local node to have a smaller
- * distance than the others.
- * Do some quick checks here and only use the SLIT if it passes.
- */
-static __init int slit_valid(struct acpi_table_slit *slit)
-{
-	int i, j;
-	int d = slit->locality_count;
-	for (i = 0; i < d; i++) {
-		for (j = 0; j < d; j++)  {
-			u8 val = slit->entry[d*i + j];
-			if (i == j) {
-				if (val != 10)
-					return 0;
-			} else if (val <= 10)
-				return 0;
-		}
-	}
-	return 1;
-}
-
-/* Callback for SLIT parsing */
-void __init acpi_numa_slit_init(struct acpi_table_slit *slit)
-{
-	unsigned long mfn;
-	if (!slit_valid(slit)) {
-		printk(KERN_INFO "ACPI: SLIT table looks invalid. "
-		       "Not used.\n");
-		return;
-	}
-	mfn = alloc_boot_pages(PFN_UP(slit->header.length), 1);
-	if (!mfn) {
-		printk(KERN_ERR "ACPI: Unable to allocate memory for "
-		       "saving ACPI SLIT numa information.\n");
-		return;
-	}
-	acpi_slit = mfn_to_virt(mfn);
-	memcpy(acpi_slit, slit, slit->header.length);
 }
 
 /* Callback for Proximity Domain -> x2APIC mapping */
@@ -453,18 +340,6 @@ int __init acpi_scan_nodes(u64 start, u64 end)
 			numa_set_node(i, NUMA_NO_NODE);
 	}
 	numa_init_array();
-	return 0;
-}
-
-static unsigned node_to_pxm(nodeid_t n)
-{
-	unsigned i;
-
-	if ((n < ARRAY_SIZE(pxm2node)) && (pxm2node[n].node == n))
-		return pxm2node[n].pxm;
-	for (i = 0; i < ARRAY_SIZE(pxm2node); i++)
-		if (pxm2node[i].node == n)
-			return pxm2node[i].pxm;
 	return 0;
 }
 

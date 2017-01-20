@@ -30,6 +30,9 @@
 #include <asm/page.h>
 #include <asm/acpi.h>
 
+extern int num_node_memblks;
+extern struct node node_memblk_range[NR_NODE_MEMBLKS];
+extern nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
 extern nodemask_t numa_nodes_parsed;
 struct uid_to_mpidr {
     u32 uid;
@@ -38,6 +41,7 @@ struct uid_to_mpidr {
 
 /* Holds mapping of CPU id to MPIDR read from MADT */
 static struct uid_to_mpidr cpu_uid_to_hwid[NR_CPUS] __read_mostly;
+static __initdata DECLARE_BITMAP(memblk_hotplug, NR_NODE_MEMBLKS);
 
 static __init void bad_srat(void)
 {
@@ -158,6 +162,82 @@ void __init acpi_numa_gicc_affinity_init(const struct acpi_srat_gicc_affinity *p
     acpi_numa = 1;
     printk(XENLOG_INFO "SRAT: PXM %d -> MPIDR 0x%lx -> Node %d\n",
            pxm, mpidr, node);
+}
+
+/* Callback for parsing of the Proximity Domain <-> Memory Area mappings */
+void __init
+acpi_numa_memory_affinity_init(const struct acpi_srat_mem_affinity *ma)
+{
+    u64 start, end;
+    unsigned pxm;
+    nodeid_t node;
+    int i;
+
+    if ( srat_disabled() )
+        return;
+
+    if ( ma->header.length != sizeof(struct acpi_srat_mem_affinity) )
+    {
+        bad_srat();
+        return;
+    }
+    if ( !(ma->flags & ACPI_SRAT_MEM_ENABLED) )
+        return;
+
+    if ( num_node_memblks >= NR_NODE_MEMBLKS )
+    {
+        printk(XENLOG_WARNING
+               "Too many numa entry, try bigger NR_NODE_MEMBLKS \n");
+        bad_srat();
+        return;
+    }
+
+    start = ma->base_address;
+    end = start + ma->length;
+    pxm = ma->proximity_domain;
+    node = setup_node(pxm);
+    if ( node == NUMA_NO_NODE )
+    {
+        bad_srat();
+        return;
+    }
+    /* It is fine to add this area to the nodes data it will be used later*/
+    i = conflicting_memblks(start, end);
+    if ( i < 0 )
+        /* everything fine */;
+    else if ( memblk_nodeid[i] == node )
+    {
+        bool_t mismatch = !(ma->flags & ACPI_SRAT_MEM_HOT_PLUGGABLE) !=
+                           !test_bit(i, memblk_hotplug);
+
+        printk(XENLOG_WARNING
+               "%sSRAT: PXM %u (%"PRIx64"-%"PRIx64") overlaps with itself (%"PRIx64"-%"PRIx64")\n",
+               mismatch ? KERN_ERR : KERN_WARNING, pxm, start, end,
+               node_memblk_range[i].start, node_memblk_range[i].end);
+        if ( mismatch )
+        {
+            bad_srat();
+            return;
+        }
+    }
+    else
+    {
+         printk(XENLOG_WARNING
+                "SRAT: PXM %u (%"PRIx64"-%"PRIx64") overlaps with PXM %u (%"PRIx64"-%"PRIx64")\n",
+                pxm, start, end, node_to_pxm(memblk_nodeid[i]),
+                node_memblk_range[i].start, node_memblk_range[i].end);
+        bad_srat();
+        return;
+    }
+
+    printk(XENLOG_INFO "SRAT: Node %u PXM %u %"PRIx64"-%"PRIx64"%s\n",
+           node, pxm, start, end,
+           ma->flags & ACPI_SRAT_MEM_HOT_PLUGGABLE ? " (hotplug)" : "");
+
+    numa_add_memblk(node, start, ma->length);
+    node_set(node, numa_nodes_parsed);
+    if (ma->flags & ACPI_SRAT_MEM_HOT_PLUGGABLE)
+        __set_bit(num_node_memblks, memblk_hotplug);
 }
 
 void __init acpi_map_uid_to_mpidr(void)

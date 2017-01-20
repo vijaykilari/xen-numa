@@ -92,10 +92,49 @@ void acpi_table_print_srat_entry (struct acpi_subtable_header *srat);
 
 /* the following four functions are architecture-dependent */
 void acpi_numa_slit_init (struct acpi_table_slit *slit);
+#if defined(CONFIG_X86)
 void acpi_numa_processor_affinity_init(const struct acpi_srat_cpu_affinity *);
 void acpi_numa_x2apic_affinity_init(const struct acpi_srat_x2apic_cpu_affinity *);
 void acpi_numa_memory_affinity_init(const struct acpi_srat_mem_affinity *);
 void acpi_numa_arch_fixup(void);
+static inline void
+acpi_numa_gicc_affinity_init(const struct acpi_srat_gicc_affinity *pa)
+{
+	return;
+}
+#elif defined(CONFIG_ARM)
+static inline void
+acpi_numa_processor_affinity_init(const struct acpi_srat_cpu_affinity *cpu_aff)
+{
+	return;
+}
+static inline void
+acpi_numa_x2apic_affinity_init(const struct acpi_srat_x2apic_cpu_affinity *x2apic)
+{
+	return;
+}
+#if defined(CONFIG_ACPI_NUMA)
+void acpi_numa_gicc_affinity_init(const struct acpi_srat_gicc_affinity *pa);
+void acpi_numa_memory_affinity_init(const struct acpi_srat_mem_affinity *);
+void acpi_numa_arch_fixup(void);
+#else
+static inline void
+acpi_numa_gicc_affinity_init(const struct acpi_srat_gicc_affinity *pa)
+{
+	return;
+}
+static inline void
+acpi_numa_memory_affinity_init(const struct acpi_srat_mem_affinity *ma)
+{
+	return;
+}
+static inline void
+acpi_numa_arch_fixup(void)
+{
+	return;
+}
+#endif /* CONFIG_ACPI_NUMA */
+#endif /* CONFIG_X86 */
 
 #ifdef CONFIG_ACPI_HOTPLUG_CPU
 /* Arch dependent functions for cpu hotplug support */

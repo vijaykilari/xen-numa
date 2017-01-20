@@ -25,9 +25,11 @@
 #include <xen/init.h>
 #include <xen/types.h>
 #include <xen/errno.h>
+#include <xen/mm.h>
 #include <xen/acpi.h>
 #include <xen/numa.h>
 #include <acpi/acmacros.h>
+#include <asm/mm.h>
 
 #define ACPI_NUMA	0x80000000
 #define _COMPONENT	ACPI_NUMA
@@ -105,6 +107,21 @@ void __init acpi_table_print_srat_entry(struct acpi_subtable_header * header)
 		}
 #endif				/* ACPI_DEBUG_OUTPUT */
 		break;
+       case ACPI_SRAT_TYPE_GICC_AFFINITY:
+#ifdef ACPI_DEBUG_OUTPUT
+		{
+			struct acpi_srat_gicc_affinity *p =
+			    (struct acpi_srat_gicc_affinity *)header;
+			ACPI_DEBUG_PRINT((ACPI_DB_INFO,
+					  "SRAT Processor (acpi id[0x%04x]) in"
+					  " proximity domain %d %s\n",
+					  p->acpi_processor_uid,
+					  p->proximity_domain,
+					  (p->flags & ACPI_SRAT_GICC_ENABLED) ?
+					  "enabled" : "disabled");
+		}
+#endif                         /* ACPI_DEBUG_OUTPUT */
+               break;
 	default:
 		printk(KERN_WARNING PREFIX
 		       "Found unsupported SRAT entry (type = %#x)\n",
@@ -185,6 +202,24 @@ int __init acpi_parse_srat(struct acpi_table_header *table)
 	return 0;
 }
 
+static int __init
+acpi_parse_gicc_affinity(struct acpi_subtable_header *header,
+			 const unsigned long end)
+{
+	const struct acpi_srat_gicc_affinity *processor_affinity
+			= (struct acpi_srat_gicc_affinity *)header;
+
+	if (!processor_affinity)
+		return -EINVAL;
+
+	acpi_table_print_srat_entry(header);
+
+	/* let architecture-dependent part to do it */
+	acpi_numa_gicc_affinity_init(processor_affinity);
+
+	return 0;
+}
+
 int __init
 acpi_table_parse_srat(int id, acpi_madt_entry_handler handler,
 		      unsigned int max_entries)
@@ -205,6 +240,8 @@ int __init acpi_numa_init(void)
 		acpi_table_parse_srat(ACPI_SRAT_TYPE_MEMORY_AFFINITY,
 				      acpi_parse_memory_affinity,
 				      NR_NODE_MEMBLKS);
+		acpi_table_parse_srat(ACPI_SRAT_TYPE_GICC_AFFINITY,
+				      acpi_parse_gicc_affinity, NR_CPUS);
 	}
 
 	/* SLIT: System Locality Information Table */

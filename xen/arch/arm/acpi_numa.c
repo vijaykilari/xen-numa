@@ -105,6 +105,61 @@ static int __init acpi_parse_madt_handler(struct acpi_subtable_header *header,
     return 0;
 }
 
+/* Callback for Proximity Domain -> ACPI processor UID mapping */
+void __init acpi_numa_gicc_affinity_init(const struct acpi_srat_gicc_affinity *pa)
+{
+    int pxm, node;
+    u64 mpidr = 0;
+    static u32 cpus_in_srat;
+
+    if ( srat_disabled() )
+        return;
+
+    if ( pa->header.length < sizeof(struct acpi_srat_gicc_affinity) )
+    {
+        printk(XENLOG_WARNING "SRAT: Invalid SRAT header length: %d\n",
+               pa->header.length);
+        bad_srat();
+        return;
+    }
+
+    if ( !(pa->flags & ACPI_SRAT_GICC_ENABLED) )
+        return;
+
+    if ( cpus_in_srat >= NR_CPUS )
+    {
+        printk(XENLOG_WARNING
+               "SRAT: cpu_to_node_map[%d] is too small to fit all cpus\n",
+               NR_CPUS);
+        return;
+    }
+
+    pxm = pa->proximity_domain;
+    node = setup_node(pxm);
+    if ( node == NUMA_NO_NODE || node >= MAX_NUMNODES )
+    {
+        printk(XENLOG_WARNING "SRAT: Too many proximity domains %d\n", pxm);
+        bad_srat();
+        return;
+    }
+
+    mpidr = acpi_get_cpu_mpidr(pa->acpi_processor_uid);
+    if ( mpidr == MPIDR_INVALID )
+    {
+        printk(XENLOG_WARNING
+               "SRAT: PXM %d with ACPI ID %d has no valid MPIDR in MADT\n",
+               pxm, pa->acpi_processor_uid);
+        bad_srat();
+        return;
+    }
+
+    node_set(node, numa_nodes_parsed);
+    cpus_in_srat++;
+    acpi_numa = 1;
+    printk(XENLOG_INFO "SRAT: PXM %d -> MPIDR 0x%lx -> Node %d\n",
+           pxm, mpidr, node);
+}
+
 void __init acpi_map_uid_to_mpidr(void)
 {
     int i;

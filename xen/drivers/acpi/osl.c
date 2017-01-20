@@ -29,6 +29,7 @@
 #include <xen/pfn.h>
 #include <xen/types.h>
 #include <xen/errno.h>
+#include <xen/mm.h>
 #include <xen/acpi.h>
 #include <xen/numa.h>
 #include <acpi/acmacros.h>
@@ -39,6 +40,7 @@
 #include <xen/efi.h>
 #include <xen/vmap.h>
 #include <xen/kconfig.h>
+#include <asm/mm.h>
 
 #define _COMPONENT		ACPI_OS_SERVICES
 ACPI_MODULE_NAME("osl")

@@ -30,6 +30,7 @@
 #include <xen/sched.h>
 #include <xen/errno.h>
 #include <xen/softirq.h>
+#include <xen/srat.h>
 #include <asm/setup.h>
 
 static int numa_setup(char *s);
@@ -282,6 +283,11 @@ static __init int numa_setup(char *opt)
         numa_off = 1;
     if ( !strncmp(opt,"on",2) )
         numa_off = 0;
+    if ( !strncmp(opt,"noacpi",6) )
+    {
+        numa_off = 0;
+        acpi_numa = -1;
+    }
 
     return arch_numa_setup(opt);
 }

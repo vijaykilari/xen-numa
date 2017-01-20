@@ -204,7 +204,17 @@ int __init numa_init(void)
     for ( i = 0; i < MAX_NUMNODES * 2; i++ )
         _node_distance[i] = 0;
 
-    ret = dt_numa_init();
+#ifdef CONFIG_ACPI_NUMA
+    if ( !acpi_disabled )
+    {
+        acpi_map_uid_to_mpidr();
+        ret = acpi_numa_init();
+        if ( ret || srat_disabled() )
+            goto no_numa;
+    }
+    else
+#endif
+        ret = dt_numa_init();
 
     if ( !ret )
         ret = numa_initmem_init();

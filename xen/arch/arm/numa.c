@@ -20,6 +20,7 @@
 #include <xen/mm.h>
 #include <xen/nodemask.h>
 #include <xen/pfn.h>
+#include <xen/acpi.h>
 #include <asm/mm.h>
 #include <xen/numa.h>
 #include <asm/acpi.h>

@@ -68,6 +68,8 @@ static inline void enable_acpi(void)
 {
     acpi_disabled = 0;
 }
+
+void acpi_map_uid_to_mpidr(void);
 #else
 #define acpi_disabled (1)
 #define disable_acpi()

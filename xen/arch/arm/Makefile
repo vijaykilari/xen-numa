@@ -51,6 +51,7 @@ obj-y += vpsci.o
 obj-y += vuart.o
 obj-$(CONFIG_NUMA) += numa.o
 obj-$(CONFIG_NUMA) += dt_numa.o
+obj-$(CONFIG_ACPI_NUMA) += acpi_numa.o
 
 #obj-bin-y += ....o
 

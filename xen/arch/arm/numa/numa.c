@@ -19,6 +19,7 @@
 #include <xen/nodemask.h>
 #include <xen/numa.h>
 #include <xen/pfn.h>
+#include <acpi/srat.h>
 #include <asm/acpi.h>
 
 static uint8_t (*node_distance_fn)(nodeid_t a, nodeid_t b);
@@ -40,6 +41,11 @@ void numa_failed(void)
     init_dt_numa_distance();
     node_distance_fn = NULL;
     init_cpu_to_node();
+
+#ifdef CONFIG_ACPI_NUMA
+    acpi_numa = -1;
+    reset_pxm2node();
+#endif
 }
 
 void __init numa_set_cpu_node(int cpu, unsigned int nid)

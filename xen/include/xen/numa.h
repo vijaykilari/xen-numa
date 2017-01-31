@@ -11,7 +11,7 @@
 #define NUMA_NO_DISTANCE 0xFF
 
 #define MAX_NUMNODES    (1 << NODES_SHIFT)
-
+#define NR_NODE_MEMBLKS (MAX_NUMNODES*2)
 #define vcpu_to_node(v) (cpu_to_node((v)->processor))
 
 #define domain_to_node(d) \
@@ -66,6 +66,9 @@ static inline __attribute__((pure)) nodeid_t phys_to_nid(paddr_t addr)
 #define clear_node_cpumask(cpu) do {} while (0)
 #endif /* CONFIG_NUMA */
 
+extern int valid_numa_range(u64 start, u64 end, nodeid_t node);
+extern int conflicting_memblks(u64 start, u64 end);
+extern void cutoff_node(int i, u64 start, u64 end);
 extern void numa_add_cpu(int cpu);
 extern nodeid_t setup_node(unsigned int pxm);
 extern void numa_set_node(int cpu, nodeid_t node);

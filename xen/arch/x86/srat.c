@@ -25,7 +25,7 @@ static struct acpi_table_slit *__read_mostly acpi_slit;
 
 static nodemask_t memory_nodes_parsed __initdata;
 static nodemask_t processor_nodes_parsed __initdata;
-static struct node nodes[MAX_NUMNODES] __initdata;
+extern struct node nodes[MAX_NUMNODES] __initdata;
 
 struct pxm2node {
 	unsigned pxm;
@@ -36,9 +36,9 @@ static struct pxm2node __read_mostly pxm2node[MAX_NUMNODES] =
 
 static unsigned node_to_pxm(nodeid_t n);
 
-static int num_node_memblks;
-static struct node node_memblk_range[NR_NODE_MEMBLKS];
-static nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
+extern int num_node_memblks;
+extern struct node node_memblk_range[NR_NODE_MEMBLKS];
+extern nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
 static __initdata DECLARE_BITMAP(memblk_hotplug, NR_NODE_MEMBLKS);
 
 static inline bool_t node_found(unsigned idx, unsigned pxm)
@@ -101,52 +101,6 @@ nodeid_t setup_node(unsigned pxm)
 	pxm2node[idx].node = node;
 
 	return node;
-}
-
-int valid_numa_range(u64 start, u64 end, nodeid_t node)
-{
-	int i;
-
-	for (i = 0; i < num_node_memblks; i++) {
-		struct node *nd = &node_memblk_range[i];
-
-		if (nd->start <= start && nd->end > end &&
-			memblk_nodeid[i] == node )
-			return 1;
-	}
-
-	return 0;
-}
-
-static __init int conflicting_memblks(u64 start, u64 end)
-{
-	int i;
-
-	for (i = 0; i < num_node_memblks; i++) {
-		struct node *nd = &node_memblk_range[i];
-		if (nd->start == nd->end)
-			continue;
-		if (nd->end > start && nd->start < end)
-			return i;
-		if (nd->end == end && nd->start == start)
-			return i;
-	}
-	return -1;
-}
-
-static __init void cutoff_node(int i, u64 start, u64 end)
-{
-	struct node *nd = &nodes[i];
-	if (nd->start < start) {
-		nd->start = start;
-		if (nd->end < nd->start)
-			nd->start = nd->end;
-	}
-	if (nd->end > end) {
-		nd->end = end;
-		if (nd->start > nd->end)
-			nd->start = nd->end;
-	}
 }
 
 static __init void bad_srat(void)

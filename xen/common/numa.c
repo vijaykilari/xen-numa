@@ -46,6 +46,61 @@ nodeid_t cpu_to_node[NR_CPUS] __read_mostly = {
 
 cpumask_t node_to_cpumask[MAX_NUMNODES] __read_mostly;
 
+int num_node_memblks;
+struct node node_memblk_range[NR_NODE_MEMBLKS];
+nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
+struct node nodes[MAX_NUMNODES] __initdata;
+
+int valid_numa_range(u64 start, u64 end, nodeid_t node)
+{
+#ifdef CONFIG_NUMA
+    int i;
+
+    for (i = 0; i < num_node_memblks; i++) {
+        struct node *nd = &node_memblk_range[i];
+
+        if (nd->start <= start && nd->end > end &&
+            memblk_nodeid[i] == node )
+            return 1;
+    }
+
+    return 0;
+#else
+    return 1;
+#endif
+}
+
+__init int conflicting_memblks(u64 start, u64 end)
+{
+    int i;
+
+    for (i = 0; i < num_node_memblks; i++) {
+        struct node *nd = &node_memblk_range[i];
+        if (nd->start == nd->end)
+            continue;
+        if (nd->end > start && nd->start < end)
+            return i;
+        if (nd->end == end && nd->start == start)
+            return i;
+    }
+    return -1;
+}
+
+__init void cutoff_node(int i, u64 start, u64 end)
+{
+    struct node *nd = &nodes[i];
+    if (nd->start < start) {
+        nd->start = start;
+        if (nd->end < nd->start)
+            nd->start = nd->end;
+    }
+    if (nd->end > end) {
+        nd->end = end;
+        if (nd->start > nd->end)
+            nd->start = nd->end;
+    }
+}
+
 /*
  * Given a shift value, try to populate memnodemap[]
  * Returns :

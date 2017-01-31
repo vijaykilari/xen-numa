@@ -28,7 +28,6 @@ extern int srat_disabled(void);
 extern void srat_detect_node(int cpu);
 
 extern nodeid_t apicid_to_node[];
-extern int valid_numa_range(u64 start, u64 end, nodeid_t node);
 
 void srat_parse_regions(u64 addr);
 extern u8 __node_distance(nodeid_t a, nodeid_t b);

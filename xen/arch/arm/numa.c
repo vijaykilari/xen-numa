@@ -23,6 +23,7 @@
 #include <xen/acpi.h>
 #include <asm/mm.h>
 #include <xen/numa.h>
+#include <xen/srat.h>
 #include <asm/acpi.h>
 #include <xen/errno.h>
 #include <xen/cpumask.h>
@@ -35,6 +36,7 @@ extern struct node nodes[MAX_NUMNODES] __initdata;
 extern int num_node_memblks;
 extern struct node node_memblk_range[NR_NODE_MEMBLKS];
 extern nodeid_t memblk_nodeid[NR_NODE_MEMBLKS];
+extern struct acpi_table_slit *__read_mostly acpi_slit;
 
 void __init numa_set_cpu_node(int cpu, unsigned long hwid)
 {
@@ -50,8 +52,23 @@ void __init numa_set_cpu_node(int cpu, unsigned long hwid)
 
 u8 __node_distance(nodeid_t a, nodeid_t b)
 {
-    if ( !node_distance )
+    unsigned index;
+    u8 slit_val;
+
+    if ( !node_distance && !acpi_slit )
         return a == b ? 10 : 20;
+
+    if ( acpi_slit )
+    {
+        index = acpi_slit->locality_count * node_to_pxm(a);
+        slit_val = acpi_slit->entry[index + node_to_pxm(b)];
+
+        /* ACPI defines 0xff as an unreachable node and 0-9 are undefined */
+        if ( (slit_val == 0xff) || (slit_val <= 9) )
+            return NUMA_NO_DISTANCE;
+        else
+            return slit_val;
+    }
 
     return _node_distance[a * MAX_NUMNODES + b];
 }
@@ -140,6 +157,7 @@ static void __init numa_dummy_init(unsigned long start_pfn,
     nodes_clear(node_online_map);
     node_set_online(0);
 
+    acpi_slit = NULL;
     for ( i = 0; i < NR_CPUS; i++ )
         numa_set_node(i, 0);
 

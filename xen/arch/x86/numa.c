@@ -32,13 +32,6 @@ nodeid_t apicid_to_node[MAX_LOCAL_APIC] = {
 
 nodemask_t __read_mostly node_online_map = { { [0] = 1UL } };
 
-s8 acpi_numa = 0;
-
-int srat_disabled(void)
-{
-    return numa_off || acpi_numa < 0;
-}
-
 void __init numa_init_array(void)
 {
     int rr, i;

@@ -30,6 +30,13 @@ extern struct node nodes[MAX_NUMNODES] __initdata;
 struct pxm2node __read_mostly pxm2node[MAX_NUMNODES] =
     { [0 ... MAX_NUMNODES - 1] = {.node = NUMA_NO_NODE} };
 
+s8 acpi_numa = 0;
+
+int srat_disabled(void)
+{
+    return numa_off || acpi_numa < 0;
+}
+
 static inline bool_t node_found(unsigned idx, unsigned pxm)
 {
     return ((pxm2node[idx].pxm == pxm) &&

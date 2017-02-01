@@ -21,7 +21,6 @@ extern cpumask_t     node_to_cpumask[];
 
 extern void numa_init_array(void);
 
-extern int srat_disabled(void);
 extern void srat_detect_node(int cpu);
 
 extern nodeid_t apicid_to_node[];

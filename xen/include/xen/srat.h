@@ -6,7 +6,9 @@ struct pxm2node {
     nodeid_t node;
 };
 
+extern s8 acpi_numa;
 extern struct pxm2node __read_mostly pxm2node[MAX_NUMNODES];
+extern int srat_disabled(void);
 nodeid_t pxm_to_node(unsigned pxm);
 nodeid_t setup_node(unsigned pxm);
 unsigned node_to_pxm(nodeid_t n);

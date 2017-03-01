@@ -10,8 +10,15 @@ void init_dt_numa_distance(void);
 #ifdef CONFIG_NUMA
 void numa_init(void);
 int dt_numa_init(void);
+void numa_set_cpu_node(int cpu, unsigned int nid);
+
 #else
 static inline void numa_init(void)
+{
+    return;
+}
+
+static inline void numa_set_cpu_node(int cpu, unsigned int nid)
 {
     return;
 }

@@ -787,6 +787,8 @@ void __init start_xen(unsigned long boot_phys_offset,
 
     processor_id();
 
+    numa_add_cpu(0);
+
     smp_init_cpus();
     cpus = smp_get_max_cpus();
     printk(XENLOG_INFO "SMP: Allowing %u CPUs\n", cpus);

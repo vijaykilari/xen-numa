@@ -30,6 +30,7 @@ extern s8 acpi_numa;
 void numa_initmem_init(unsigned long start_pfn, unsigned long end_pfn);
 int srat_disabled(void);
 int valid_numa_range(paddr_t start, paddr_t end, nodeid_t node);
+void init_cpu_to_node(void);
 
 #ifdef CONFIG_NUMA
 #define cpu_to_node(cpu)         (cpu_to_node[cpu])

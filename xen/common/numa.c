@@ -76,6 +76,20 @@ nodeid_t get_memblk_nodeid(unsigned int id)
     return memblk_nodeid[id];
 }
 
+int __init get_mem_nodeid(paddr_t start, paddr_t end)
+{
+    unsigned int i;
+
+    for ( i = 0; i < get_num_node_memblks(); i++ )
+    {
+        if ( start >= node_memblk_range[i].start &&
+             end <= node_memblk_range[i].end )
+            return memblk_nodeid[i];
+    }
+
+    return -EINVAL;
+}
+
 static nodeid_t *get_memblk_nodeid_map(void)
 {
     return &memblk_nodeid[0];

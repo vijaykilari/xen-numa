@@ -70,6 +70,7 @@ struct node *get_numa_node(unsigned int id);
 nodeid_t get_memblk_nodeid(unsigned int memblk);
 struct node *get_node_memblk_range(unsigned int memblk);
 int numa_add_memblk(nodeid_t nodeid, paddr_t start, uint64_t size);
+int get_mem_nodeid(paddr_t start, paddr_t end);
 int get_num_node_memblks(void);
 bool arch_sanitize_nodes_memory(void);
 void numa_failed(void);

@@ -18,6 +18,7 @@
 #include <xen/ctype.h>
 #include <xen/nodemask.h>
 #include <xen/numa.h>
+#include <xen/pfn.h>
 #include <asm/acpi.h>
 
 static uint8_t (*node_distance_fn)(nodeid_t a, nodeid_t b);
@@ -64,9 +65,66 @@ void register_node_distance(uint8_t (fn)(nodeid_t a, nodeid_t b))
     node_distance_fn = fn;
 }
 
+bool __init arch_sanitize_nodes_memory(void)
+{
+    nodemask_t mem_nodes_parsed;
+    int bank, nodeid;
+    struct node *nd;
+    paddr_t start, size, end;
+
+    nodes_clear(mem_nodes_parsed);
+    for ( bank = 0 ; bank < bootinfo.mem.nr_banks; bank++ )
+    {
+        start = bootinfo.mem.bank[bank].start;
+        size = bootinfo.mem.bank[bank].size;
+        end = start + size;
+
+        nodeid = get_mem_nodeid(start, end);
+        if ( nodeid >= NUMA_NO_NODE )
+        {
+            printk(XENLOG_WARNING
+                   "NUMA: node for mem bank start 0x%lx - 0x%lx not found\n",
+                   start, end);
+
+            return false;
+        }
+
+        nd = get_numa_node(nodeid);
+        if ( !node_test_and_set(nodeid, mem_nodes_parsed) )
+        {
+            nd->start = start;
+            nd->end = end;
+        }
+        else
+        {
+            if ( start < nd->start )
+                nd->start = start;
+            if ( nd->end < end )
+                nd->end = end;
+        }
+    }
+
+    return true;
+}
+
+static void __init numa_reset_numa_nodes(void)
+{
+    int i;
+    struct node *nd;
+
+    for ( i = 0; i < MAX_NUMNODES; i++ )
+    {
+        nd = get_numa_node(i);
+        nd->start = 0;
+        nd->end = 0;
+    }
+}
+
 void __init numa_init(void)
 {
-    int ret = 0;
+    int ret = 0, bank;
+    paddr_t ram_start = ~0;
+    paddr_t ram_end = 0;
 
     nodes_clear(processor_nodes_parsed);
     init_cpu_to_node();
@@ -83,6 +141,23 @@ void __init numa_init(void)
     }
 
 no_numa:
+    for ( bank = 0 ; bank < bootinfo.mem.nr_banks; bank++ )
+    {
+        paddr_t bank_start = bootinfo.mem.bank[bank].start;
+        paddr_t bank_end = bank_start + bootinfo.mem.bank[bank].size;
+
+        ram_start = min(ram_start, bank_start);
+        ram_end = max(ram_end, bank_end);
+    }
+
+    /*
+     * In arch_sanitize_nodes_memory() we update nodes[] properly.
+     * Hence we reset the nodes[] before calling numa_scan_nodes().
+     */
+    numa_reset_numa_nodes();
+
+    numa_initmem_init(PFN_UP(ram_start), PFN_DOWN(ram_end));
+
     return;
 }
 

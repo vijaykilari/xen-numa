@@ -20,6 +20,7 @@ static inline nodeid_t acpi_get_nodeid(uint64_t hwid)
 void numa_init(void);
 int dt_numa_init(void);
 void numa_set_cpu_node(int cpu, unsigned int nid);
+bool_t arch_acpi_numa_init(void);
 
 #else
 static inline void numa_init(void)

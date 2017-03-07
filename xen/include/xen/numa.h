@@ -75,6 +75,7 @@ int get_num_node_memblks(void);
 bool arch_sanitize_nodes_memory(void);
 void numa_failed(void);
 uint8_t __node_distance(nodeid_t a, nodeid_t b);
+void numa_clear_memblks(void);
 #else
 static inline void numa_add_cpu(int cpu) { }
 static inline void numa_set_node(int cpu, nodeid_t node) { }

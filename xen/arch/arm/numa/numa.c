@@ -139,11 +139,22 @@ void __init numa_init(void)
     if ( numa_off )
         goto no_numa;
 
-    ret = dt_numa_init();
+#ifdef CONFIG_ACPI_NUMA
+    ret = arch_acpi_numa_init();
     if ( ret )
     {
         numa_off = true;
-        printk(XENLOG_WARNING "DT NUMA init failed\n");
+        printk(XENLOG_WARNING "ACPI NUMA init failed\n");
+    }
+#endif
+    if ( acpi_disabled )
+    {
+        ret = dt_numa_init();
+        if ( ret )
+        {
+            numa_off = true;
+            printk(XENLOG_WARNING "DT NUMA init failed\n");
+        }
     }
 
 no_numa:

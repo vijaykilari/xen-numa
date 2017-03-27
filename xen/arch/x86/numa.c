@@ -271,7 +271,7 @@ void __init numa_initmem_init(unsigned long start_pfn, unsigned long end_pfn)
 
 #ifdef CONFIG_ACPI_NUMA
     if ( !numa_off &&
-         !acpi_scan_nodes(pfn_to_paddr(start_pfn), pfn_to_paddr(end_pfn)) )
+         !numa_scan_nodes(pfn_to_paddr(start_pfn), pfn_to_paddr(end_pfn)) )
         return;
 #endif
 

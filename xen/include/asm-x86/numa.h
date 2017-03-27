@@ -36,7 +36,7 @@ extern bool numa_off;
 
 extern int srat_disabled(void);
 extern void numa_set_node(int cpu, nodeid_t node);
-extern nodeid_t setup_node(unsigned int pxm);
+extern nodeid_t acpi_setup_node(unsigned int pxm);
 extern void srat_detect_node(int cpu);
 
 extern void setup_node_bootmem(nodeid_t nodeid, paddr_t start, paddr_t end);

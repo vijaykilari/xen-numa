@@ -6,7 +6,7 @@
 #define MAX_NUMNODES    NR_NODES
 #define NR_NODE_MEMBLKS (MAX_NUMNODES * 2)
 
-typedef u8 nodeid_t;
+typedef uint8_t nodeid_t;
 
 extern int srat_rev;
 
@@ -19,8 +19,8 @@ extern cpumask_t     node_to_cpumask[];
 #define node_to_cpumask(node)    (node_to_cpumask[node])
 
 struct node {
-    u64 start;
-    u64 end;
+    paddr_t start;
+    paddr_t end;
 };
 
 extern int compute_hash_shift(struct node *nodes, int numnodes,
@@ -39,14 +39,14 @@ extern void numa_set_node(int cpu, nodeid_t node);
 extern nodeid_t setup_node(unsigned int pxm);
 extern void srat_detect_node(int cpu);
 
-extern void setup_node_bootmem(nodeid_t nodeid, u64 start, u64 end);
+extern void setup_node_bootmem(nodeid_t nodeid, paddr_t start, paddr_t end);
 extern nodeid_t apicid_to_node[];
 extern void init_cpu_to_node(void);
 
 /* Simple perfect hash to map pdx to node numbers */
 extern int memnode_shift;
 extern unsigned long memnodemapsize;
-extern u8 *memnodemap;
+extern uint8_t *memnodemap;
 
 struct node_data {
     unsigned long node_start_pfn;
@@ -73,10 +73,10 @@ static inline __attribute_pure__ nodeid_t phys_to_nid(paddr_t addr)
 #define node_end_pfn(nid)       NODE_DATA(nid)->node_start_pfn + \
                                  NODE_DATA(nid)->node_spanned_pages
 
-extern int valid_numa_range(u64 start, u64 end, nodeid_t node);
+extern int valid_numa_range(paddr_t start, paddr_t end, nodeid_t node);
 
-void srat_parse_regions(u64 addr);
-extern u8 __node_distance(nodeid_t a, nodeid_t b);
+void srat_parse_regions(paddr_t addr);
+extern uint8_t __node_distance(nodeid_t a, nodeid_t b);
 unsigned int arch_get_dma_bitsize(void);
 
 #endif

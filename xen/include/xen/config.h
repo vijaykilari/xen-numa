@@ -81,6 +81,7 @@
 
 /* allow existing code to work with Kconfig variable */
 #define NR_CPUS CONFIG_NR_CPUS
+#define NR_NODES CONFIG_NR_NODES
 
 #ifndef CONFIG_DEBUG
 #define NDEBUG

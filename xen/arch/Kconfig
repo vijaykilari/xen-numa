@@ -6,3 +6,10 @@ config NR_CPUS
 	default "128" if ARM
 	---help---
 	  Specifies the maximum number of physical CPUs which Xen will support.
+
+config NR_NODES
+	int "Maximum number of NUMA nodes"
+	default "64" if X86
+	default "8" if ARM
+	---help---
+	  Specifies the maximum number of NUMA nodes which Xen will support.

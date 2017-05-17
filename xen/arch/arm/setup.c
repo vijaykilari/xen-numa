@@ -38,6 +38,7 @@
 #include <xen/libfdt/libfdt.h>
 #include <xen/acpi.h>
 #include <asm/alternative.h>
+#include <xen/numa.h>
 #include <asm/page.h>
 #include <asm/current.h>
 #include <asm/setup.h>
@@ -754,6 +755,9 @@ void __init start_xen(unsigned long boot_phys_offset,
 
     /* Parse the ACPI tables for possible boot-time configuration */
     acpi_boot_table_init();
+
+    /* numa_init parses acpi tables. So call after acpi init */
+    numa_init();
 
     end_boot_allocator();
 

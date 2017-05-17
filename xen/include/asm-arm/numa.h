@@ -3,7 +3,15 @@
 
 typedef uint8_t nodeid_t;
 
-#ifndef CONFIG_NUMA
+#ifdef CONFIG_NUMA
+void numa_init(void);
+int dt_numa_init(void);
+#else
+static inline void numa_init(void)
+{
+    return;
+}
+
 /* Fake one node for now. See also node_online_map. */
 #define cpu_to_node(cpu) 0
 #define node_to_cpumask(node)   (cpu_online_map)

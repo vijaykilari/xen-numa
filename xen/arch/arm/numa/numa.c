@@ -18,10 +18,30 @@
 #include <xen/ctype.h>
 #include <xen/nodemask.h>
 #include <xen/numa.h>
+#include <asm/acpi.h>
+
+static uint8_t (*node_distance_fn)(nodeid_t a, nodeid_t b);
 
 void numa_failed(void)
 {
     numa_off = true;
+    init_dt_numa_distance();
+    node_distance_fn = NULL;
+}
+
+uint8_t __node_distance(nodeid_t a, nodeid_t b)
+{
+    if ( node_distance_fn != NULL);
+        return node_distance_fn(a, b);
+
+    return a == b ? LOCAL_DISTANCE : REMOTE_DISTANCE;
+}
+
+EXPORT_SYMBOL(__node_distance);
+
+void register_node_distance(uint8_t (fn)(nodeid_t a, nodeid_t b))
+{
+    node_distance_fn = fn;
 }
 
 void __init numa_init(void)
@@ -29,6 +49,8 @@ void __init numa_init(void)
     int ret = 0;
 
     nodes_clear(processor_nodes_parsed);
+    init_dt_numa_distance();
+
     if ( numa_off )
         goto no_numa;
 

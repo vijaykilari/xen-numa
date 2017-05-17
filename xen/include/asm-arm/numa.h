@@ -4,6 +4,8 @@
 typedef uint8_t nodeid_t;
 
 void dt_numa_process_memory_node(uint32_t nid, paddr_t start, paddr_t size);
+void register_node_distance(uint8_t (fn)(nodeid_t a, nodeid_t b));
+void init_dt_numa_distance(void);
 
 #ifdef CONFIG_NUMA
 void numa_init(void);

@@ -18,7 +18,6 @@ extern nodeid_t apicid_to_node[];
 extern void init_cpu_to_node(void);
 
 void srat_parse_regions(paddr_t addr);
-extern uint8_t __node_distance(nodeid_t a, nodeid_t b);
 unsigned int arch_get_dma_bitsize(void);
 
 #endif

@@ -6,6 +6,8 @@
 #include <asm/numa.h>
 
 #define NUMA_NO_NODE     0xFF
+#define LOCAL_DISTANCE   10
+#define REMOTE_DISTANCE  20
 #define NUMA_NO_DISTANCE 0xFF
 
 #define MAX_NUMNODES    NR_NODES
@@ -70,6 +72,7 @@ int numa_add_memblk(nodeid_t nodeid, paddr_t start, uint64_t size);
 int get_num_node_memblks(void);
 bool arch_sanitize_nodes_memory(void);
 void numa_failed(void);
+uint8_t __node_distance(nodeid_t a, nodeid_t b);
 #else
 static inline void numa_add_cpu(int cpu) { }
 static inline void numa_set_node(int cpu, nodeid_t node) { }

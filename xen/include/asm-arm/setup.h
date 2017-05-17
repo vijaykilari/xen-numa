@@ -83,6 +83,11 @@ struct bootmodule *add_boot_module(bootmodule_kind kind,
 struct bootmodule *boot_module_find_by_kind(bootmodule_kind kind);
 const char * __init boot_module_kind_as_string(bootmodule_kind kind);
 
+u32 device_tree_get_u32(const void *fdt, int node, const char *prop_name,
+                        u32 dflt);
+bool_t device_tree_type_matches(const void *fdt, int node, const char *match);
+bool_t device_tree_node_compatible(const void *fdt, int node,
+                                   const char *match);
 #endif
 /*
  * Local variables:

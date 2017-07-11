@@ -23,8 +23,8 @@ struct node {
     paddr_t end;
 };
 
-extern int compute_hash_shift(struct node *nodes, int numnodes,
-                              nodeid_t *nodeids);
+extern int compute_memnode_shift(struct node *nodes, unsigned int numnodes,
+                                 nodeid_t *nodeids);
 extern nodeid_t pxm_to_node(unsigned int pxm);
 
 #define ZONE_ALIGN (1UL << (MAX_ORDER+PAGE_SHIFT))
@@ -44,7 +44,7 @@ extern nodeid_t apicid_to_node[];
 extern void init_cpu_to_node(void);
 
 /* Simple perfect hash to map pdx to node numbers */
-extern int memnode_shift;
+extern unsigned int memnode_shift;
 extern unsigned long memnodemapsize;
 extern uint8_t *memnodemap;
 

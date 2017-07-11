@@ -24,7 +24,7 @@ custom_param("numa", numa_setup);
 struct node_data node_data[MAX_NUMNODES];
 
 /* Mapping from pdx to node id */
-int memnode_shift;
+unsigned int memnode_shift;
 
 /*
  * In case of numa init failure or numa off,
@@ -59,15 +59,16 @@ int srat_disabled(void)
 /*
  * Given a shift value, try to populate memnodemap[]
  * Returns :
- * 1 if OK
- * 0 if memnodmap[] too small (of shift too small)
- * -1 if node overlap or lost ram (shift too big)
+ * 0 if OK
+ * -ENOSPC if memnodmap[] too small (or shift too small)
+ * -EINVAL if node overlap or lost ram (shift too big)
  */
 static int __init populate_memnodemap(const struct node *nodes,
-                                      int numnodes, int shift, nodeid_t *nodeids)
+                                      unsigned int numnodes, unsigned int shift,
+                                      nodeid_t *nodeids)
 {
     unsigned long spdx, epdx;
-    int i, res = -1;
+    int i, res = -EINVAL;
 
     memset(memnodemap, NUMA_NO_NODE, memnodemapsize * sizeof(*memnodemap));
     for ( i = 0; i < numnodes; i++ )
@@ -77,10 +78,10 @@ static int __init populate_memnodemap(const struct node *nodes,
         if ( spdx >= epdx )
             continue;
         if ( (epdx >> shift) >= memnodemapsize )
-            return 0;
+            return -ENOSPC;
         do {
             if ( memnodemap[spdx >> shift] != NUMA_NO_NODE )
-                return -1;
+                return -EINVAL;
 
             if ( !nodeids )
                 memnodemap[spdx >> shift] = i;
@@ -89,7 +90,7 @@ static int __init populate_memnodemap(const struct node *nodes,
 
             spdx += (1UL << shift);
         } while ( spdx < epdx );
-        res = 1;
+        res = 0;
     }
 
     return res;
@@ -105,7 +106,7 @@ static int __init allocate_cachealigned_memnodemap(void)
         printk(KERN_ERR
                "NUMA: Unable to allocate Memory to Node hash map\n");
         memnodemapsize = 0;
-        return -1;
+        return -ENOMEM;
     }
 
     memnodemap = mfn_to_virt(mfn);
@@ -122,10 +123,10 @@ static int __init allocate_cachealigned_memnodemap(void)
  * The LSB of all start and end addresses in the node map is the value of the
  * maximum possible shift.
  */
-static int __init extract_lsb_from_nodes(const struct node *nodes,
-                                         int numnodes)
+static unsigned int __init extract_lsb_from_nodes(const struct node *nodes,
+                                                  unsigned int numnodes)
 {
-    int i, nodes_used = 0;
+    unsigned int i, nodes_used = 0;
     unsigned long spdx, epdx;
     unsigned long bitfield = 0, memtop = 0;
 
@@ -149,27 +150,30 @@ static int __init extract_lsb_from_nodes(const struct node *nodes,
     return i;
 }
 
-int __init compute_hash_shift(struct node *nodes, int numnodes,
-                              nodeid_t *nodeids)
+int __init compute_memnode_shift(struct node *nodes, unsigned int numnodes,
+                                 nodeid_t *nodeids)
 {
-    int shift;
+    int ret;
 
-    shift = extract_lsb_from_nodes(nodes, numnodes);
+    memnode_shift = extract_lsb_from_nodes(nodes, numnodes);
+
     if ( memnodemapsize <= ARRAY_SIZE(_memnodemap) )
         memnodemap = _memnodemap;
     else if ( allocate_cachealigned_memnodemap() )
-        return -1;
-    printk(KERN_DEBUG "NUMA: Using %d for the hash shift.\n", shift);
+        return -ENOMEM;
 
-    if ( populate_memnodemap(nodes, numnodes, shift, nodeids) != 1 )
+    printk(KERN_DEBUG "NUMA: Using %u for the hash shift.\n", memnode_shift);
+
+    ret = populate_memnodemap(nodes, numnodes, memnode_shift, nodeids);
+    if ( ret )
     {
         printk(KERN_INFO "Your memory is not aligned you need to "
                "rebuild your hypervisor with a bigger NODEMAPSIZE "
-               "shift=%d\n", shift);
-        return -1;
+               "shift=%u\n", memnode_shift);
+        return ret;
     }
 
-    return shift;
+    return 0;
 }
 /* initialize NODE_DATA given nodeid and start/end */
 void __init setup_node_bootmem(nodeid_t nodeid, paddr_t start, paddr_t end)
@@ -242,8 +246,7 @@ static int __init numa_emulation(uint64_t start_pfn, uint64_t end_pfn)
                (nodes[i].end - nodes[i].start) >> 20);
         node_set_online(i);
     }
-    memnode_shift = compute_hash_shift(nodes, numa_fake, NULL);
-    if ( memnode_shift < 0 )
+    if ( compute_memnode_shift(nodes, numa_fake, NULL) )
     {
         memnode_shift = 0;
         printk(KERN_ERR "No NUMA hash function found. Emulation disabled.\n");

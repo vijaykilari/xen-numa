@@ -58,6 +58,7 @@ DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_core_mask);
 DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, scratch_cpumask);
 static cpumask_t scratch_cpu0mask;
 
+nodemask_t __read_mostly node_online_map = { { [0] = 1UL } };
 cpumask_t cpu_online_map __read_mostly;
 EXPORT_SYMBOL(cpu_online_map);
 

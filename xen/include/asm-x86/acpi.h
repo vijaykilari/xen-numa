@@ -103,8 +103,6 @@ extern void acpi_reserve_bootmem(void);
 
 #define ARCH_HAS_POWER_INIT	1
 
-extern int numa_scan_nodes(paddr_t start, paddr_t end);
-
 #ifdef CONFIG_ACPI_SLEEP
 
 extern struct acpi_sleep_info acpi_sinfo;

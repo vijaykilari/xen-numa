@@ -26,11 +26,8 @@ extern bool numa_off;
 extern s8 acpi_numa;
 
 void numa_initmem_init(unsigned long start_pfn, unsigned long end_pfn);
-int compute_memnode_shift(struct node *nodes, unsigned int numnodes,
-                          nodeid_t *nodeids);
 int srat_disabled(void);
-void numa_init_array(void);
-void setup_node_bootmem(nodeid_t nodeid, paddr_t start, paddr_t end);
+int valid_numa_range(paddr_t start, paddr_t end, nodeid_t node);
 
 #ifdef CONFIG_NUMA
 #define cpu_to_node(cpu)         (cpu_to_node[cpu])
@@ -65,6 +62,14 @@ static inline __attribute_pure__ nodeid_t phys_to_nid(paddr_t addr)
 
 void numa_add_cpu(int cpu);
 void numa_set_node(int cpu, nodeid_t node);
+int conflicting_memblks(paddr_t start, paddr_t end);
+struct node *get_numa_node(unsigned int id);
+nodeid_t get_memblk_nodeid(unsigned int memblk);
+struct node *get_node_memblk_range(unsigned int memblk);
+int numa_add_memblk(nodeid_t nodeid, paddr_t start, uint64_t size);
+int get_num_node_memblks(void);
+bool arch_sanitize_nodes_memory(void);
+void numa_failed(void);
 #else
 static inline void numa_add_cpu(int cpu) { }
 static inline void numa_set_node(int cpu, nodeid_t node) { }

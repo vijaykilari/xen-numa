@@ -80,6 +80,8 @@
 
 typedef struct { DECLARE_BITMAP(bits, MAX_NUMNODES); } nodemask_t;
 extern nodemask_t _unused_nodemask_arg_;
+extern nodemask_t processor_nodes_parsed;
+extern nodemask_t memory_nodes_parsed;
 
 #define node_set(node, dst) __node_set((node), &(dst))
 static inline void __node_set(int node, volatile nodemask_t *dstp)

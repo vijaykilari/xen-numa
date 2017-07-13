@@ -324,7 +324,7 @@ static int __init numa_scan_nodes(paddr_t start, paddr_t end)
     for ( i = 0; i < MAX_NUMNODES; i++ )
         cutoff_node(i, start, end);
 
-    if ( acpi_numa <= 0 )
+    if ( !acpi_disabled && acpi_numa <= 0 )
         return -1;
 
     if ( !arch_sanitize_nodes_memory() )
@@ -430,11 +430,9 @@ void __init numa_initmem_init(unsigned long start_pfn, unsigned long end_pfn)
         return;
 #endif
 
-#ifdef CONFIG_ACPI_NUMA
     if ( !numa_off &&
          !numa_scan_nodes(pfn_to_paddr(start_pfn), pfn_to_paddr(end_pfn)) )
         return;
-#endif
 
     printk(KERN_INFO "%s\n",
            numa_off ? "NUMA turned off" : "No NUMA configuration found");
